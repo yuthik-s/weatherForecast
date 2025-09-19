@@ -1,6 +1,0 @@
-<h1 class="cityDisplay">City</h1>
-      <p class="tempDisplay">°C/°F</p>
-      <p class="descDisplay">Sunny</p>
-      <p class="humidityDisplay">12%</p>
-      <p class="windDisplay">1.2 m/s</p>
-      <p class="errorMessage">Can't Load</p>
