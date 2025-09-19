@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Weather Dashboard</title>
+    <link rel="shortcut icon" href="image.png" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="flex flex-col items-center min-h-screen p-5 font-sans transition-[background] duration-[1500ms] bg-gradient-to-b from-sky-300 to-green-200"
+  >
+    <!-- Weather form -->
+    <form class="m-5 flex flex-col items-center weatherForm">
+      <input
+        type="text"
+        class="p-2 text-xl font-bold border border-gray-500 rounded-xl my-2 w-[300px] max-w-[90%] text-center bg-white/80 placeholder:text-center cityInput"
+        placeholder="Enter City Name"
+      />
+      <button
+        type="submit"
+        class="p-2 text-xl font-bold rounded-xl text-white bg-yellow-300 w-[150px] max-w-[80%] hover:bg-orange-300"
+      >
+        Submit
+      </button>
+    </form>
+
+    <!-- Weather card -->
+    <div
+      class="hidden p-5 w-4/5 max-w-[900px] rounded-xl shadow-md flex-col items-center bg-white/85 backdrop-blur-sm card"
+    >
+      <div id="icon">
+        <img
+          id="wicon"
+          src=""
+          alt="Weather icon"
+          class="w-20 h-20 my-2 weather-icon"
+        />
+      </div>
+    </div>
+
+    <script>
+      document.title = "Interactive Weather Dashboard";
+
+      // DOM Elements
+      const weatherForm = document.querySelector(".weatherForm");
+      const cityInput = document.querySelector(".cityInput");
+      const card = document.querySelector(".card");
+      const weatherIcon = document.getElementById("wicon");
+      const apiKey = "d2ab67fd2add2c28c895fe1a70bbe196";
+
+      // Weather condition to background based on description
+      const weatherBackgrounds = {
+        clear: "linear-gradient(to bottom, #87CEEB, #FFD700)",
+        clouds: "linear-gradient(to bottom, #B0C4DE, #778899)",
+        rain: "linear-gradient(to bottom, #4682B4, #2F4F4F)",
+        drizzle: "linear-gradient(to bottom, #87CEEB, #6A5ACD)",
+        thunderstorm: "linear-gradient(to bottom, #191970, #000080)",
+        snow: "linear-gradient(to bottom, #F0F8FF, #E6E6FA)",
+        mist: "linear-gradient(to bottom, #DCDCDC, #C0C0C0)",
+        smoke: "linear-gradient(to bottom, #A9A9A9, #696969)",
+        haze: "linear-gradient(to bottom, #D3D3D3, #A9A9A9)",
+        dust: "linear-gradient(to bottom, #D2B48C, #BC8F8F)",
+        fog: "linear-gradient(to bottom, #D3D3D3, #808080)",
+        sand: "linear-gradient(to bottom, #F4A460, #DAA520)",
+        ash: "linear-gradient(to bottom, #A9A9A9, #696969)",
+        squall: "linear-gradient(to bottom, #4682B4, #2F4F4F)",
+        tornado: "linear-gradient(to bottom, #2F4F4F, #000000)",
+      };
+
+      // Event to submit form
+      weatherForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const city = cityInput.value.trim();
+
+        if (!city) {
+          displayError("Enter the name of the city");
+          return;
+        }
+
+        try {
+          const weatherData = await getWeatherData(city);
+          const forecastData = await getForecastData(city);
+          displayWeatherInfo(weatherData);
+          displayForecast(forecastData);
+          updateBackground(weatherData.weather[0].main.toLowerCase());
+        } catch (error) {
+          displayError(error.message);
+        }
+      });
+
+      // Fetches current weather data
+      async function getWeatherData(city) {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`
+        );
+        if (!response.ok) throw new Error("Couldn't fetch weather data");
+        return await response.json();
+      }
+
+      // fetches five days weather data
+      async function getForecastData(city) {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}`
+        );
+        if (!response.ok) throw new Error("Couldn't fetch forecast data");
+        return await response.json();
+      }
+
+      // Update background based on weather condition
+      function updateBackground(weatherCondition) {
+        let background = "linear-gradient(to bottom, #87CEEB, #98FB98)";
+        for (const [key, value] of Object.entries(weatherBackgrounds)) {
+          if (weatherCondition.includes(key)) {
+            background = value;
+            break;
+          }
+        }
+        document.body.style.background = background;
+      }
+
+      // Displays current weather information
+      function displayWeatherInfo(data) {
+        const {
+          name: city,
+          main: { temp, humidity },
+          weather: [{ description, icon }],
+          wind: { speed },
+        } = data;
+
+        card.textContent = "";
+        card.style.display = "flex";
+
+        const iconContainer = document.createElement("div");
+        iconContainer.id = "icon";
+        weatherIcon.src = `https://openweathermap.org/img/w/${icon}.png`;
+        weatherIcon.alt = description;
+        iconContainer.appendChild(weatherIcon);
+        card.appendChild(iconContainer);
+
+        const cityDisplay = document.createElement("h1");
+        cityDisplay.textContent = city;
+        cityDisplay.className = "text-2xl font-bold text-center";
+
+        const tempDisplay = document.createElement("p");
+        tempDisplay.textContent = `${(temp - 273.15).toFixed(2)}°C / ${(
+          ((temp - 273.15) * 9) / 5 +
+          32
+        ).toFixed(2)}°F`;
+        tempDisplay.className = "text-xl";
+
+        const humidityDisplay = document.createElement("p");
+        humidityDisplay.textContent = `Humidity: ${humidity}%`;
+
+        const descDisplay = document.createElement("p");
+        descDisplay.textContent = `Description: ${
+          description.charAt(0).toUpperCase() + description.slice(1)
+        }`;
+
+        const windDisplay = document.createElement("p");
+        windDisplay.textContent = `Wind Speed: ${speed} m/s`;
+
+        card.append(
+          cityDisplay,
+          tempDisplay,
+          humidityDisplay,
+          descDisplay,
+          windDisplay
+        );
+      }
+
+      // Display five day forecast
+      function displayForecast(data) {
+        const dailyForecast = [];
+        const datesAdded = new Set();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        data.list.forEach((item) => {
+          const itemDate = new Date(item.dt_txt);
+          itemDate.setHours(0, 0, 0, 0);
+          const time = item.dt_txt.split(" ")[1];
+
+          if (
+            time === "12:00:00" &&
+            itemDate > today &&
+            !datesAdded.has(item.dt_txt.split(" ")[0])
+          ) {
+            dailyForecast.push(item);
+            datesAdded.add(item.dt_txt.split(" ")[0]);
+          }
+        });
+
+        const forecastList = dailyForecast.slice(0, 5);
+        const forecastContainer = document.createElement("div");
+        forecastContainer.className =
+          "flex flex-wrap justify-center w-full mt-5";
+
+        forecastList.forEach((item) => {
+          const { temp } = item.main;
+          const { description, icon } = item.weather[0];
+
+          const dayCard = document.createElement("div");
+          dayCard.className =
+            "flex-1 basis-[120px] max-w-[150px] m-1.5 p-2.5 rounded-xl bg-white/50 text-center flex flex-col items-center";
+
+          const dayName = new Date(item.dt_txt).toLocaleDateString("en-US", {
+            weekday: "short",
+          });
+
+          const forecastIcon = document.createElement("img");
+          forecastIcon.src = `https://openweathermap.org/img/w/${icon}.png`;
+          forecastIcon.alt = description;
+          forecastIcon.className = "w-12 h-12 my-1";
+
+          dayCard.innerHTML = `
+            <h3 class="font-bold">${dayName}</h3>
+            <p>${(temp - 273.15).toFixed(2)}°C / ${(
+            ((temp - 273.15) * 9) / 5 +
+            32
+          ).toFixed(2)}°F</p>
+          `;
+
+          dayCard.appendChild(forecastIcon);
+
+          const descPara = document.createElement("p");
+          descPara.textContent =
+            description.charAt(0).toUpperCase() + description.slice(1);
+          dayCard.appendChild(descPara);
+
+          forecastContainer.appendChild(dayCard);
+        });
+
+        card.appendChild(forecastContainer);
+      }
+
+      // This displays error message
+      function displayError(message) {
+        const errorDisplay = document.createElement("p");
+        errorDisplay.textContent = message;
+        errorDisplay.className = "font-bold text-center text-red-500";
+
+        card.textContent = "";
+        card.style.display = "flex";
+        card.appendChild(errorDisplay);
+
+        weatherIcon.src = "";
+        document.body.style.background =
+          "linear-gradient(to bottom, #87CEEB, #98FB98)";
+      }
+    </script>
+  </body>
+</html>
